@@ -33,6 +33,7 @@ public:
 	~MidiOutput() override;
 
 	void setSourceVolume(int source, int volume, bool apply=false);
+	int getSourceVolume(int source);
 
 	void initSource(int source);
 	void deinitSource(int source);

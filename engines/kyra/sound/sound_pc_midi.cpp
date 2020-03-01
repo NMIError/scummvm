@@ -376,7 +376,12 @@ void SoundMidiPC::onTimer(void *data) {
 
 		if (midi->_fadeStartTime + musicFadeTime > midi->_vm->_system->getMillis()) {
 			int volume = (byte)((musicFadeTime - (midi->_vm->_system->getMillis() - midi->_fadeStartTime)) * midi->_musicVolume / musicFadeTime);
-			midi->_output->setSourceVolume(0, volume, true);
+			// Use only 25 volume steps to limit the number of MIDI messages sent
+			volume -= (volume % (midi->_musicVolume / 25));
+			// Only send a volume change message if the volume has actually changed
+			if (midi->_output->getSourceVolume(0) != volume) {
+				midi->_output->setSourceVolume(0, volume, true);
+			}
 		} else {
 			for (int i = 0; i < 16; ++i)
 				midi->_output->stopNotesOnChannel(i);

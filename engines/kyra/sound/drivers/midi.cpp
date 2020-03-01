@@ -277,6 +277,10 @@ void MidiOutput::setSourceVolume(int source, int volume, bool apply) {
 	}
 }
 
+int MidiOutput::getSourceVolume(int source) {
+	return _sources[source].volume;
+}
+
 void MidiOutput::initSource(int source) {
 	memset(_sources[source].notes, -1, sizeof(_sources[source].notes));
 

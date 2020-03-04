@@ -434,7 +434,7 @@ MidiDriver::DeviceHandle MidiDriver::getDeviceHandle(const Common::String &ident
 void MidiDriver::sendMT32Reset() {
 	static const byte resetSysEx[] = { 0x41, 0x10, 0x16, 0x12, 0x7F, 0x00, 0x00, 0x01, 0x00 };
 	sysEx(resetSysEx, sizeof(resetSysEx));
-	g_system->delayMillis(100);
+	g_system->delayMillis(130);
 }
 
 void MidiDriver::sendGMReset() {

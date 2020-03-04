@@ -47,7 +47,7 @@ MidiOutput::MidiOutput(OSystem *system, MidiDriver *output, bool isMT32, bool de
 	static const byte sysEx3[] = { 0, 3, 2 };
 
 	if (_isMT32) {
-		sendSysEx(0x7F, 0x00, 0x00, sysEx1, 1);
+		_output->sendMT32Reset();
 		sendSysEx(0x10, 0x00, 0x0D, sysEx1, 9);
 		sendSysEx(0x10, 0x00, 0x04, sysEx2, 9);
 		sendSysEx(0x10, 0x00, 0x01, sysEx3, 3);

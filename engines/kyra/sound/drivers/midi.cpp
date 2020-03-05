@@ -88,6 +88,7 @@ MidiOutput::MidiOutput(OSystem *system, MidiDriver *output, bool isMT32, bool de
 
 
 MidiOutput::~MidiOutput() {
+	allSoundsOff();
 	_output->close();
 	delete _output;
 }

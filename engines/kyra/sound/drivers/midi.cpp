@@ -103,6 +103,8 @@ void MidiOutput::send(uint32 b) {
 			Controller &cont = _sources[_curSource].controllers[channel][i];
 			if (cont.controller == param1) {
 				cont.value = param2;
+				// Also set the channel controller value (order of controllers is the same)
+				_channels[channel].controllers[i].value = param2;
 				break;
 			}
 		}

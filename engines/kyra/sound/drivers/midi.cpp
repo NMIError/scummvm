@@ -246,7 +246,7 @@ void MidiOutput::setSourceVolume(int source, int volume, bool apply) {
 	_sources[source].volume = volume;
 
 	if (apply) {
-		for (int i = 0; i < 16; ++i) {
+		for (int i = (_isMT32 ? 1 : 0); i < (_isMT32 ? 10 : 16); ++i) {
 			// Controller 0 in the state table should always be '7' aka
 			// volume control
 			byte realVol = (_sources[source].controllers[i][0].value * volume) >> 8;
@@ -362,7 +362,7 @@ void MidiOutput::stopNotesOnChannel(int channel) {
 }
 
 void MidiOutput::allSoundsOff() {
-	for (int i = 0; i < 16; ++i) {
+	for (int i = (_isMT32 ? 1 : 0); i < (_isMT32 ? 10 : 16); ++i) {
 		stopNotesOnChannel(i);
 		sendIntern(0xB0, i, 0x78, 0);
 	}

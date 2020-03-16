@@ -359,8 +359,13 @@ void MidiOutput::unlockChannel(int channel) {
 	sendIntern(0xB0, channel, 0x7B, 0);
 
 	// Send controller values to MIDI device.
+	// Send scaled volume (should be at index 0)
+	if (_channels[channel].controllers[0].value != 0xFF) {
+		int scaledVolume = (_sources[_curSource].volume * _channels[channel].controllers[0].value) >> 8;
+		sendIntern(0xB0, channel, _channels[channel].controllers[0].controller, scaledVolume);
+	}
 	// No need to send 72h, 6Eh, 6Fh, 70h - these are XMIDI controllers.
-	for (int i = 0; i < 5; ++i) {
+	for (int i = 1; i < 5; ++i) {
 		if (_channels[channel].controllers[i].value != 0xFF)
 			sendIntern(0xB0, channel, _channels[channel].controllers[i].controller, _channels[channel].controllers[i].value);
 	}

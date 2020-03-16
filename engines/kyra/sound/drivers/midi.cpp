@@ -68,10 +68,14 @@ MidiOutput::MidiOutput(OSystem *system, MidiDriver *output, bool isMT32, bool de
 			sendIntern(0xB0, j, defaultControllers[i].controller, defaultControllers[i].value);
 	}
 
+	// Initialize pitch wheel and program
 	for (int i = 1; i <= 9; ++i) {
+		_channels[i].pitchWheel = 0x4000;
 		sendIntern(0xE0, i, 0x00, 0x40);
-		if (defaultPrograms[i - 1] != 0xFF)
+		if (defaultPrograms[i - 1] != 0xFF) {
+			_channels[i].program = defaultPrograms[i - 1];
 			sendIntern(0xC0, i, defaultPrograms[i - 1], 0x00);
+		}
 	}
 
 	for (int i = 0; i < 4; ++i) {

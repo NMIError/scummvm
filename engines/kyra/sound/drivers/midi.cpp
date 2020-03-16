@@ -63,7 +63,9 @@ MidiOutput::MidiOutput(OSystem *system, MidiDriver *output, bool isMT32, bool de
 		_channels[i].program = 0xFF;
 	}
 
-	for (int i = 0; i < 9; ++i) {
+	// Initialize controllers on MIDI device.
+	// No need to send 72h, 6Eh, 6Fh, 70h - these are XMIDI controllers.
+	for (int i = 0; i < 5; ++i) {
 		for (int j = 1; j <= 9; ++j)
 			sendIntern(0xB0, j, defaultControllers[i].controller, defaultControllers[i].value);
 	}
@@ -113,9 +115,11 @@ void MidiOutput::send(uint32 b) {
 			}
 		}
 
-		if (param1 == 0x07) {
+		switch (param1) {
+		case 0x07:
 			param2 = (param2 * _sources[_curSource].volume) >> 8;
-		} else if (param1 == 0x6E) {	// Lock Channel
+			break;
+		case 0x6E: // Lock Channel
 			if (param2 >= 0x40) {	// Lock Channel
 				int chan = lockChannel();
 				if (chan < 0)
@@ -126,13 +130,28 @@ void MidiOutput::send(uint32 b) {
 				unlockChannel(_sources[_curSource].channelMap[channel]);
 				_sources[_curSource].channelMap[channel] = channel;
 			}
-		} else if (param1 == 0x6F) {	// Protect Channel
+			return;
+		case 0x6F: // Protect Channel
 			if (param2 >= 0x40) {	// Protect Channel
 				_channels[channel].flags |= kChannelProtected;
 			} else {				// Unprotect Channel
 				_channels[channel].flags &= ~kChannelProtected;
 			}
-		} else if (param1 == 0x7B) {	// All notes off
+			return;
+		case 0x70: // Voice Protect
+		case 0x71: // Timbre Protect
+		case 0x72: // Patch Bank Select
+		case 0x73: // Indirect Controller Prefix
+		case 0x74: // For Loop Controller
+		case 0x75: // Next/Break Loop Controller
+		case 0x76: // Clear Beat/Bar Count
+		case 0x77: // Callback Trigger
+		case 0x78: // Sequence Branch Index (also MIDI All Sounds Off!)
+			// TODO These XMIDI controllers are not implemented here or are not implemented at all 
+			// (74h, 75h and 77h are implemented in the parser).
+			// No need to send these to the MIDI device.
+			return;
+		case 0x7B: // All notes off
 			// FIXME: Since the XMIDI parsers sends this
 			// on track change, we simply ignore it.
 			return;
@@ -289,10 +308,9 @@ void MidiOutput::deinitSource(int source) {
 			} else if (cont.controller == 0x6F) {
 				if (cont.value >= 0x40)
 					_channels[i].flags &= ~kChannelProtected;
-			} else if (cont.controller == 0x70) {
-				if (cont.value >= 0x40)
-					sendIntern(0xB0, i, 0x70, 0);
 			}
+			// TODO If cont is Voice Protect XMIDI controller (0x70) and it is active (value >= 0x40), reset it to 0.
+			// Voice Protect is currently not implemented by ScummVM.
 		}
 	}
 }
@@ -340,7 +358,9 @@ void MidiOutput::unlockChannel(int channel) {
 	sendIntern(0xB0, channel, 0x40, 0);
 	sendIntern(0xB0, channel, 0x7B, 0);
 
-	for (int i = 0; i < 9; ++i) {
+	// Send controller values to MIDI device.
+	// No need to send 72h, 6Eh, 6Fh, 70h - these are XMIDI controllers.
+	for (int i = 0; i < 5; ++i) {
 		if (_channels[channel].controllers[i].value != 0xFF)
 			sendIntern(0xB0, channel, _channels[channel].controllers[i].controller, _channels[channel].controllers[i].value);
 	}

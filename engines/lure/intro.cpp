@@ -233,7 +233,7 @@ void Introduction::playMusic(uint8 soundNumber, bool fadeOut) {
 		Sound.musicInterface_KillAll();
 
 		_currentSound = soundNumber;
-		Sound.musicInterface_Play(_currentSound, 0);
+		Sound.musicInterface_Play(_currentSound, 0, true);
 	}
 }
 

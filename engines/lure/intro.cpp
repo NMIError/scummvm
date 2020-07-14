@@ -55,11 +55,11 @@ static const AnimRecord anim_screens[] = {
 	// original interpreter vs about 14 seconds here. 8 seconds is quite short
 	// to read the screen, so I kept it at 14. Conveniently, the first music
 	// track is much longer than what was actually used in the game.
-	{0x40, 0, 0x35A, 0x2C8, 0x80, true, 0x1F4, 0x81},		// The kingdom was at peace
-	{0x42, 1, 0, 0x5FA, 0x81, false, 0, 0xFF},				// Cliff overhang
-	{0x44, 2, 0, 0, 0x82, false, 0, 0xFF},					// Siluette in moonlight
-	{0x24, 3, 0, 0x650 + 0x24, 0xFF, false, 0x328, 0x83},	// Exposition of reaching town
-	{0x46, 3, 0, 0, 0x83, false, 0, 0xFF},					// Skorl approaches
+	{0x40, 0, 0x35A, 0x2C8, 0x00, true, 0x1F4, 0x01},		// The kingdom was at peace
+	{0x42, 1, 0, 0x5FA, 0x01, false, 0, 0xFF},				// Cliff overhang
+	{0x44, 2, 0, 0, 0x02, false, 0, 0xFF},					// Siluette in moonlight
+	{0x24, 3, 0, 0x650 + 0x24, 0xFF, false, 0x328, 0x03},	// Exposition of reaching town
+	{0x46, 3, 0, 0, 0x03, false, 0, 0xFF},					// Skorl approaches
 	{0, 0, 0, 0, 0xFF, false, 0, 0xFF}};
 
 // showScreen

@@ -563,6 +563,15 @@ void SoundManager::musicInterface_Play(uint8 soundNumber, uint8 channelNumber, b
 		dataSize = nextDataOfs - dataOfs;
 	}
 
+	// Note: the original interpreter seems to keep track of the "volume"
+	// (velocity) adjustment last used for each MIDI channel. The volume
+	// is not set in the few instances where musicInterface_Play is used
+	// directly to play a sound instead of addSound (mostly cutscenes).
+	// As a result, the volume adjustment is used that was last set on
+	// the MIDI channel by whatever sound played there previously.
+	// I think this is unintentional, so in ScummVM volume is set to 80h
+	// (neutral) by default when calling musicInterface_Play without
+	// specifying volume.
 	_soundMutex.lock();
 	MidiMusic *sound = new MidiMusic(_driver, _channelsInner, channelNumber, soundNum,
 		isMusic, loop, numChannels, soundStart, dataSize, volume);
@@ -829,6 +838,12 @@ void MidiMusic::send(uint32 b) {
 			volume = volume * _volume * master_volume / 65025;
 		}
 		b = (b & 0xFF00FFFF) | (volume << 16);
+	} else if ((b & 0xFFF0) == 0x18B0) {
+		if (Sound.isRoland())
+			// Some tracks use CC 18. This is undefined in the MIDI standard
+			// and does nothing on an MT-32. Not sending this to the device
+			// in case it is a GM device with non-standard behavior for this CC.
+			return;
 	} else if ((b & 0xF0) == 0xC0) {
 		if (Sound.isRoland() && !Sound.hasNativeMT32() && channel != 9) {
 			b = (b & 0xFFFF00FF) | MidiDriver::_mt32ToGm[(b >> 8) & 0xFF] << 8;

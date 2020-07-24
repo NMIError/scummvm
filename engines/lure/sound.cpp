@@ -672,10 +672,28 @@ void SoundManager::musicInterface_ContinuePlaying() {
 
 // musicInterface_TrashReverb
 // Trashes reverb on actively playing sounds
+// TODO There are still some unknown things about this function:
+// - It triggers when opening a door while outside. In the original interpreter it 
+//   triggers on other events when you are outside as well, but I'm not sure which 
+//   ones exactly. Maybe doors opened by NPCs off-screen?
+// - It decreases the MT-32 reverb (compared to the values set when starting the
+//   game: mode Plate, time 6, level 5). Maybe the intent of this function was to
+//   decrease reverb in outside areas compared to inside areas (which is realistic).
+//   But reverb does not seem to be increased when you go back inside. Also, this
+//   function is repeatedly executed while outside, which does not seem to
+//   accomplish anything. Finally, why execute this when opening a door when you
+//   are already outside, instead of f.e. when changing from a room inside to a
+//   room outside? What is the purpose of this function?
 
 void SoundManager::musicInterface_TrashReverb() {
-	// TODO: Handle support for trashing reverb
 	debugC(ERROR_INTERMEDIATE, kLureDebugSounds, "musicInterface_TrashReverb");
+
+	// TODO Should this do anything on AdLib? It does not have reverb AFAIK
+	if (_isRoland) {
+		// Set reverb parameters to mode Room, time 1, level 0
+		static const byte sysExData[] = { 0x00, 0x00, 0x00 };
+		mt32SysEx(0x10 << 14 | 0x00 << 7 | 0x01, sysExData, 3);
+	}
 }
 
 // musicInterface_KillAll

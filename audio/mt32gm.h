@@ -29,25 +29,31 @@
 
 class MidiDriver_MT32GM : public MidiDriver {
 public:
-	static const uint8 MIDI_CHANNEL_COUNT = 16;
-	static const uint8 MIDI_RHYTHM_CHANNEL = 9;
+	static const uint8 MAXIMUM_SOURCES = 10;
 
-	static const byte MIDI_CONTROLLER_BANK_SELECT_MSB = 0x00;
-	static const byte MIDI_CONTROLLER_VOLUME = 0x07;
-	static const byte MIDI_CONTROLLER_PANNING = 0x0A;
-	static const byte MIDI_CONTROLLER_BANK_SELECT_LSB = 0x20;
-	static const byte MIDI_CONTROLLER_SUSTAIN = 0x40;
-	static const byte MIDI_CONTROLLER_RESET_ALL_CONTROLLERS = 0x79;
-	static const byte MIDI_CONTROLLER_ALL_NOTES_OFF = 0x7B;
-	static const byte MIDI_CONTROLLER_OMNI_ON = 0x7C;
-	static const byte MIDI_CONTROLLER_OMNI_OFF = 0x7D;
-	static const byte MIDI_CONTROLLER_MONO_ON = 0x7E;
-	static const byte MIDI_CONTROLLER_POLY_ON = 0x7F;
-	
-	static const uint8 MAXIMUM_SOURCES = 4;
+	static const byte MT32_DEFAULT_INSTRUMENTS[8];
+	static const byte MT32_DEFAULT_PANNING[8];
+	// Map for correcting Roland GS drumkit numbers.
+	static const uint8 GS_DRUMKIT_FALLBACK_MAP[128];
+
+protected:
 	static const uint8 MAXIMUM_MT32_ACTIVE_NOTES = 48;
 	static const uint8 MAXIMUM_GM_ACTIVE_NOTES = 96;
 
+	static const uint16 FADING_DELAY = 25 * 1000;
+
+public:
+	enum SourceType {
+		SOURCE_TYPE_UNDEFINED,
+		SOURCE_TYPE_MUSIC,
+		SOURCE_TYPE_SFX
+	};
+
+	enum FadeAbortType {
+		FADE_ABORT_TYPE_END_VOLUME,
+		FADE_ABORT_TYPE_CURRENT_VOLUME,
+		FADE_ABORT_TYPE_START_VOLUME
+	};
 protected:
 	/**
 	 * This stores the values of the MIDI controllers for
@@ -61,18 +67,29 @@ protected:
 		// True if the source volume has been applied to this channel
 		bool sourceVolumeApplied;
 
+		uint16 pitchWheel;
 		byte program;
+		byte instrumentBank;
+
+		byte modulation;
 		// The volume specified by the MIDI data
 		byte volume;
 		// The volume scaled using the source volume
 		byte scaledVolume;
+		byte panPosition;
+		byte expression;
 		bool sustain;
 
 		MidiChannelControlData() : source(-1),
 			sourceVolumeApplied(false),
+			pitchWheel(MIDI_PITCH_BEND_DEFAULT),
 			program(0),
-			volume(0xFF),
+			instrumentBank(0),
+			modulation(0),
+			volume(0x64),
 			scaledVolume(0x64),
+			panPosition(0x40),
+			expression(0x7F),
 			sustain(false) { }
 	};
 
@@ -80,14 +97,27 @@ protected:
 	 * This stores data about a specific source of MIDI data.
 	 */
 	struct MidiSource {
-		// The source volume as set by ScummVM (music/SFX volume)
+		SourceType type;
+		// The source volume (relative volume for this source as defined by the game).
+		// Default is the default neutral value (255).
 		uint16 volume;
+		// The source volume level at which no scaling is performed (volume as defined
+		// in MIDI data is used directly). Volume values below this decrease volume,
+		// values above increase volume (up to the maximum MIDI channel volume).
+		// Set this to match the volume values used by the game engine to avoid having
+		// to convert them. Default value is 255; minimum value is 1.
+		uint16 neutralVolume;
+		uint16 fadeStartVolume;
+		uint16 fadeEndVolume;
+		int32 fadePassedTime;
+		int32 fadeDuration;
 		// The mapping of MIDI data channels to output channels
 		// for this source.
 		int8 channelMap[MIDI_CHANNEL_COUNT];
 		uint16 availableChannels;
 
-		MidiSource() : volume(256), availableChannels(0xFFFF) {
+		MidiSource() : type(SOURCE_TYPE_UNDEFINED), volume(256), neutralVolume(256), fadeStartVolume(0),
+				fadeEndVolume(0), fadePassedTime(0), fadeDuration(0), availableChannels(0xFFFF) {
 			memset(channelMap, 0, sizeof(channelMap));
 		}
 	};
@@ -98,10 +128,15 @@ protected:
 		uint8 note;
 		bool sustain;
 
-		ActiveNote() : source(0x7F),
-			channel(0xFF),
-			note(0xFF),
-			sustain(false) { }
+		ActiveNote() { clear(); }
+
+		void clear() {
+			source = 0x7F;
+			channel = 0xFF;
+			note = 0xFF;
+			sustain = false;
+		}
+
 	};
 
 	/**
@@ -119,15 +154,17 @@ protected:
 
 public:
 	MidiDriver_MT32GM(MusicType midiType);
-	virtual ~MidiDriver_MT32GM();
+	~MidiDriver_MT32GM();
 
 	// MidiDriver interface
 	int open() override;
 	// Open the driver wrapping the specified MidiDriver instance.
-	int open(MidiDriver *driver, bool nativeMT32);
+	virtual int open(MidiDriver *driver, bool nativeMT32);
 	void close() override;
 	bool isOpen() const override { return _isOpen; }
 	bool isReady() override { return _sysExQueue.empty(); }
+	/** Get or set a property. */
+	uint32 property(int prop, uint32 param) override;
 
 	using MidiDriver_BASE::send;
 	void send(uint32 b) override;
@@ -135,49 +172,119 @@ public:
 	void sysEx(const byte *msg, uint16 length) override;
 	uint16 sysExNoDelay(const byte *msg, uint16 length) override;
 	void sysExQueue(const byte *msg, uint16 length);
-	uint16 sysExMT32(const byte *msg, uint16 length, const uint32 targetAddress, bool queue = false, bool delay = false);
+	uint16 sysExMT32(const byte *msg, uint16 length, const uint32 targetAddress, bool queue = false, bool delay = true);
 	void metaEvent(int8 source, byte type, byte *data, uint16 length) override;
 
 	void stopAllNotes(bool stopSustainedNotes = false) override;
+	void startFade(uint16 duration, uint16 targetVolume = 0);
+	void startFade(uint8 source, uint16 duration, uint16 targetVolume = 0);
+	void abortFade(FadeAbortType abortType = FADE_ABORT_TYPE_END_VOLUME);
+	void abortFade(uint8 source, FadeAbortType abortType = FADE_ABORT_TYPE_END_VOLUME);
+	bool isFading();
+	bool isFading(uint8 source);
+	void clearSysExQueue();
 	MidiChannel *allocateChannel() override;
 	MidiChannel *getPercussionChannel() override;
 	uint32 getBaseTempo() override;
 	
-	void noteOnOff(byte command, byte outputChannel, byte note, byte velocity, int8 source, MidiChannelControlData &controlData);
-	/**
-	 * Send out a control change MIDI message using the specified data.
-	 * @param controlData The new MIDI controller value will be set on this MidiChannelControlData
-	 * @param sendMessage True if the message should be sent out to the device
-	 */
-	void controlChange(byte outputChannel, byte controllerNumber, byte controllerValue, int8 source, MidiChannelControlData &controlData);
-	/**
-	 * Send a program change MIDI message using the specified data.
-	 * @param controlData The new program value will be set on this MidiChannelControlData
-	 * @param sendMessage True if the message should be sent out to the device
-	 */
-	void programChange(byte outputChannel, byte patchId, int8 source, MidiChannelControlData &controlData);
-
-	bool allocateSourceChannels(uint8 source, uint8 numChannels);
-	void deinitSource(uint8 source);
-	void setSourceVolume(uint8 source, uint16 volume);
+	virtual bool allocateSourceChannels(uint8 source, uint8 numChannels);
+	virtual void deinitSource(uint8 source);
+	void setSourceType(SourceType type);
+	void setSourceType(uint8 source, SourceType type);
+	void setSourceVolume(uint16 volume);
+	virtual void setSourceVolume(uint8 source, uint16 volume);
+	void setSourceNeutralVolume(uint16 volume);
+	void setSourceNeutralVolume(uint8 source, uint16 volume);
+	void syncSoundSettings();
 
 	void setTimerCallback(void *timer_param, Common::TimerManager::TimerProc timer_proc) override {
 		_timer_param = timer_param;
 		_timer_proc = timer_proc;
 	}
-	void onTimer();
+	virtual void onTimer();
 
 protected:
-	void initMidiDevice();
-	void removeActiveNotes(uint8 outputChannel, bool sustainedNotes);
-	bool isOutputChannelUsed(uint8 outputChannel) { return _outputChannelMask & (1 << outputChannel); }
+	virtual void initControlData();
+	virtual void initMidiDevice();
+	/**
+	 * Initializes the MT-32 MIDI device. The device will be reset and,
+	 * if the parameter is specified, set up for General MIDI data.
+	 * @param initForGM True if the MT-32 should be initialized for GM mapping
+	 */
+	virtual void initMT32(bool initForGM);
+	/**
+	 * Initializes the General MIDI device. The device will be reset.
+	 * If the initForMT32 parameter is specified, the device will be set up for
+	 * MT-32 MIDI data. If the device supports Roland GS, the enableGS
+	 * parameter can be specified for enhanced GS MT-32 compatiblity.
+	 * @param initForMT32 True if the device should be initialized for MT-32 mapping
+	 * @param enableGS True if the device should be initialized for GS MT-32 mapping
+	 */
+	virtual void initGM(bool initForMT32, bool enableGS);
+	virtual void processEvent(int8 source, uint32 b, uint8 outputChannel,
+		MidiChannelControlData &controlData, bool channelLockedByOtherSource = false);
+	virtual void noteOnOff(byte command, byte outputChannel, byte note, byte velocity,
+		int8 source, MidiChannelControlData &controlData);
+	/**
+	 * Send out a control change MIDI message using the specified data.
+	 * @param controlData The new MIDI controller value will be set on this MidiChannelControlData
+	 * @param sendMessage True if the message should be sent out to the device
+	 */
+	virtual void controlChange(byte outputChannel, byte controllerNumber, byte controllerValue,
+		int8 source, MidiChannelControlData &controlData, bool channelLockedByOtherSource = false);
+	/**
+	 * Send a program change MIDI message using the specified data.
+	 * @param controlData The new program value will be set on this MidiChannelControlData
+	 * @param sendMessage True if the message should be sent out to the device
+	 */
+	virtual void programChange(byte outputChannel, byte patchId, int8 source,
+		MidiChannelControlData &controlData, bool channelLockedByOtherSource = false);
+	virtual bool addActiveNote(uint8 outputChannel, uint8 note, int8 source);
+	virtual bool removeActiveNote(uint8 outputChannel, uint8 note, int8 source);
+	virtual void removeActiveNotes(uint8 outputChannel, bool sustainedNotes);
+	bool isOutputChannelUsed(int8 outputChannel);
+	/**
+	 * Checks if the currently selected GS bank / instrument variation
+	 * on the specified channel is valid for the specified patch.
+	 * If this is not the case, the correct bank will be returned which
+	 * can be set by sending a bank select message. If no correction is
+	 * needed, 0xFF will be returned.
+	 * This emulates the fallback functionality of the Roland SC-55 v1.2x,
+	 * on which some games rely to correct wrong bank selects.
+	 */
+	byte correctInstrumentBank(byte outputChannel, byte patchId);
 
-	Common::Mutex _mutex;
+	void updateFading();
+
+	virtual int8 mapSourceChannel(uint8 source, uint8 dataChannel);
+
+	Common::Mutex _fadingMutex;
+	Common::Mutex _allocationMutex;
 
 	MidiDriver *_driver;
+	// The type of MIDI data supplied to the driver: MT-32 or General MIDI.
 	MusicType _midiType;
+	// True if the MIDI output is an MT-32 (hardware or 100% emulated),
+	// false if the MIDI output is a General MIDI device.
 	bool _nativeMT32;
+	// True if the General MIDI output supports Roland GS for improved MT-32 mapping.
 	bool _enableGS;
+	// Indicates if the stereo panning in the MIDI data is reversed
+	// compared to the stereo panning of the intended MIDI device
+	bool _midiDataReversePanning;
+	// Indicates if the stereo panning of the output MIDI device is
+	// reversed compared to the stereo panning of the type of MIDI
+	// device used by the game (i.e. MT-32 data playing on a GM
+	// device or the other way around).
+	bool _midiDeviceReversePanning;
+	// True if GS percussion channel volume should be scaled to match MT-32 volume.
+	bool _scaleGSPercussionVolumeToMT32;
+
+	bool _userVolumeScaling;
+
+	uint16 _userMusicVolume;
+	uint16 _userSfxVolume;
+	bool _userMute;
 
 	bool _isOpen;
 	// Bitmask of the MIDI channels in use by the output device
@@ -186,12 +293,16 @@ protected:
 	uint32 _timerRate;
 
 	// stores the controller values for each MIDI channel
-	MidiChannelControlData _controlData[MIDI_CHANNEL_COUNT];
+	MidiChannelControlData *_controlData[MIDI_CHANNEL_COUNT];
 
 	MidiSource _sources[MAXIMUM_SOURCES];
 
 	uint8 _maximumActiveNotes;
 	ActiveNote *_activeNotes;
+
+	// The number of microseconds to wait before the next
+	// fading step.
+	uint16 _fadeDelay;
 
 	// The number of microseconds to wait before sending the
 	// next SysEx message.

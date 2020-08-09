@@ -125,7 +125,9 @@ bool Introduction::show() {
 	if (showScreen(start_screens[3], start_screens[3] + 1, 5000, false))
 		return true;
 
-	Sound.initCustomTimbres();
+	bool result = Sound.initCustomTimbres(true);
+	if (result)
+		return true;
 
 	// Fade out title screen
 	if (!isEGA)
@@ -137,7 +139,6 @@ bool Introduction::show() {
 	// Animated screens
 
 	AnimationSequence *anim;
-	bool result;
 	_currentSound = 0xFF;
 	const AnimRecord *curr_anim = anim_screens;
 	for (; curr_anim->resourceId; ++curr_anim) {

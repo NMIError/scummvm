@@ -831,7 +831,7 @@ void MidiDriver_MT32GM::stopAllNotes(bool stopSustainedNotes) {
 
 void MidiDriver_MT32GM::startFade(uint16 duration, uint16 targetVolume) {
 	for (int i = 0; i < MAXIMUM_SOURCES; ++i) {
-		startFade(duration, targetVolume, i);
+		startFade(i, duration, targetVolume);
 	}
 }
 

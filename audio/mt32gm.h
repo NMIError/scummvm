@@ -175,8 +175,8 @@ public:
 	void metaEvent(int8 source, byte type, byte *data, uint16 length) override;
 
 	void stopAllNotes(bool stopSustainedNotes = false) override;
-	void startFade(uint16 duration, uint16 targetVolume = 0);
-	void startFade(uint8 source, uint16 duration, uint16 targetVolume = 0);
+	void startFade(uint16 duration, uint16 targetVolume);
+	void startFade(uint8 source, uint16 duration, uint16 targetVolume);
 	void abortFade(FadeAbortType abortType = FADE_ABORT_TYPE_END_VOLUME);
 	void abortFade(uint8 source, FadeAbortType abortType = FADE_ABORT_TYPE_END_VOLUME);
 	bool isFading();

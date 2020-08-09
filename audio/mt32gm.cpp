@@ -384,7 +384,7 @@ void MidiDriver_MT32GM::send(int8 source, uint32 b) {
 	byte dataChannel = b & 0xf;
 	int8 outputChannel = source < 0 ? dataChannel : mapSourceChannel(source, dataChannel);
 
-	MidiChannelControlData controlData = *_controlData[outputChannel];
+	MidiChannelControlData &controlData = *_controlData[outputChannel];
 
 	processEvent(source, b, outputChannel, controlData);
 }

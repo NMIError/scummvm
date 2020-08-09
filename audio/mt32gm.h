@@ -163,7 +163,6 @@ public:
 	void close() override;
 	bool isOpen() const override { return _isOpen; }
 	bool isReady() override { return _sysExQueue.empty(); }
-	/** Get or set a property. */
 	uint32 property(int prop, uint32 param) override;
 
 	using MidiDriver_BASE::send;

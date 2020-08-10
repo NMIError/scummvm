@@ -523,7 +523,7 @@ bool SoundManager::fadeOut() {
 	musicInterface_KillAll();
 
 	if (_isRoland)
-		_mt32Driver->setSourceVolume(0, 256);
+		_mt32Driver->setSourceVolume(256);
 
 	return result;
 }

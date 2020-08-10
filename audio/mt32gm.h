@@ -259,6 +259,7 @@ protected:
 
 	Common::Mutex _fadingMutex;
 	Common::Mutex _allocationMutex;
+	Common::Mutex _activeNotesMutex;
 
 	MidiDriver *_driver;
 	// The type of MIDI data supplied to the driver: MT-32 or General MIDI.

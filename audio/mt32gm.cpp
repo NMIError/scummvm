@@ -559,6 +559,8 @@ void MidiDriver_MT32GM::controlChange(byte outputChannel, byte controllerNumber,
 }
 
 bool MidiDriver_MT32GM::addActiveNote(uint8 outputChannel, uint8 note, int8 source) {
+	Common::StackLock lock(_activeNotesMutex);
+
 	for (int i = 0; i < _maximumActiveNotes; ++i) {
 		ActiveNote &activeNote = _activeNotes[i];
 		if (activeNote.channel == 0xFF) {
@@ -575,6 +577,8 @@ bool MidiDriver_MT32GM::addActiveNote(uint8 outputChannel, uint8 note, int8 sour
 }
 
 bool MidiDriver_MT32GM::removeActiveNote(uint8 outputChannel, uint8 note, int8 source) {
+	Common::StackLock lock(_activeNotesMutex);
+
 	for (int i = 0; i < _maximumActiveNotes; ++i) {
 		ActiveNote &activeNote = _activeNotes[i];
 		if (activeNote.channel == outputChannel && activeNote.source == source && activeNote.note == note) {
@@ -595,6 +599,8 @@ bool MidiDriver_MT32GM::removeActiveNote(uint8 outputChannel, uint8 note, int8 s
 }
 
 void MidiDriver_MT32GM::removeActiveNotes(uint8 outputChannel, bool sustainedNotes) {
+	Common::StackLock lock(_activeNotesMutex);
+
 	// Remove sustained or non-sustained notes from the active notes registration
 	for (int i = 0; i < _maximumActiveNotes; ++i) {
 		if (_activeNotes[i].channel == outputChannel && _activeNotes[i].sustain == sustainedNotes) {
@@ -824,9 +830,14 @@ void MidiDriver_MT32GM::stopAllNotes(bool stopSustainedNotes) {
 		}
 		_driver->send(MIDI_COMMAND_CONTROL_CHANGE | i, MIDI_CONTROLLER_ALL_NOTES_OFF, 0);
 	}
+
+	_activeNotesMutex.lock();
+
 	for (int i = 0; i < _maximumActiveNotes; ++i) {
 		_activeNotes[i].clear();
 	}
+
+	_activeNotesMutex.unlock();
 }
 
 void MidiDriver_MT32GM::startFade(uint16 duration, uint16 targetVolume) {
@@ -1035,6 +1046,9 @@ void MidiDriver_MT32GM::deinitSource(uint8 source) {
 	for (int i = 0; i < MIDI_CHANNEL_COUNT; ++i) {
 		_sources[source].channelMap[i] = i;
 	}
+
+	_activeNotesMutex.lock();
+
 	// Stop any active notes.
 	for (int i = 0; i < _maximumActiveNotes; ++i) {
 		if (_activeNotes[i].source == source) {
@@ -1047,6 +1061,9 @@ void MidiDriver_MT32GM::deinitSource(uint8 source) {
 			}
 		}
 	}
+
+	_activeNotesMutex.unlock();
+
 	// TODO Optionally reset some controllers to their
 	// default values? Pitch wheel, volume, sustain...
 }

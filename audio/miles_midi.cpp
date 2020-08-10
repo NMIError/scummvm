@@ -347,6 +347,8 @@ bool MidiDriver_Miles_Midi::removeActiveNote(uint8 outputChannel, uint8 note, in
 }
 
 void MidiDriver_Miles_Midi::removeActiveNotes(uint8 outputChannel, bool sustainedNotes) {
+	Common::StackLock lock(_activeNotesMutex);
+
 	// Remove sustained or non-sustained notes from the active notes registration
 	for (int i = 0; i < _maximumActiveNotes; ++i) {
 		if (_activeNotes[i].channel == outputChannel && _activeNotes[i].sustain == sustainedNotes) {

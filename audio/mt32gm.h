@@ -33,6 +33,8 @@ public:
 
 	static const byte MT32_DEFAULT_INSTRUMENTS[8];
 	static const byte MT32_DEFAULT_PANNING[8];
+	static const uint8 MT32_DEFAULT_CHANNEL_VOLUME = 98;
+	static const uint8 GM_DEFAULT_CHANNEL_VOLUME = 100;
 	// Map for correcting Roland GS drumkit numbers.
 	static const uint8 GS_DRUMKIT_FALLBACK_MAP[128];
 
@@ -86,8 +88,8 @@ protected:
 			program(0),
 			instrumentBank(0),
 			modulation(0),
-			volume(0x64),
-			scaledVolume(0x64),
+			volume(0),
+			scaledVolume(0),
 			panPosition(0x40),
 			expression(0x7F),
 			sustain(false) { }

@@ -75,6 +75,8 @@ void MidiDriver_Miles_Midi::initControlData() {
 	for (int i = 0; i < MIDI_CHANNEL_COUNT; ++i) {
 		_controlData[i] = _midiChannels[i].currentData = new MilesMidiChannelControlData();
 		_midiChannels[i].unlockData = new MilesMidiChannelControlData();
+		_controlData[i]->volume = _controlData[i]->scaledVolume =
+			(_nativeMT32 ? MT32_DEFAULT_CHANNEL_VOLUME : GM_DEFAULT_CHANNEL_VOLUME);
 	}
 }
 

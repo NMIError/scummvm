@@ -77,6 +77,10 @@ void MidiDriver_Miles_Midi::initControlData() {
 		_midiChannels[i].unlockData = new MilesMidiChannelControlData();
 		_controlData[i]->volume = _controlData[i]->scaledVolume =
 			(_nativeMT32 ? MT32_DEFAULT_CHANNEL_VOLUME : GM_DEFAULT_CHANNEL_VOLUME);
+		if (_nativeMT32 && i >= 1 && i <= 8) {
+			_midiChannels[i].currentData->program = MT32_DEFAULT_INSTRUMENTS[i - 1];
+			_midiChannels[i].currentData->panPosition = MT32_DEFAULT_PANNING[i - 1];
+		}
 	}
 }
 
@@ -114,11 +118,8 @@ void MidiDriver_Miles_Midi::initMidiDevice() {
 		}
 		// Patch
 		if (i != MIDI_RHYTHM_CHANNEL) {
-			if (_midiType == MT_MT32) {
-				// These are the default on the MT-32; just set them on the control data
-				_midiChannels[i].currentData->program = MT32_DEFAULT_INSTRUMENTS[i - 1];
-			} else {
-				// Send the instruments out to GM devices.
+			if (_midiType == MT_GM) {
+				// Send the MT-32 default instrument numbers out to GM devices.
 				send(-1, MIDI_COMMAND_PROGRAM_CHANGE | i, MT32_DEFAULT_INSTRUMENTS[i - 1], 0);
 			}
 		}

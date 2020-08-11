@@ -133,14 +133,6 @@ MidiDriver_MT32GM::~MidiDriver_MT32GM() {
 		delete[] _activeNotes;
 }
 
-void MidiDriver_MT32GM::initControlData() {
-	for (int i = 0; i < MIDI_CHANNEL_COUNT; ++i) {
-		_controlData[i] = new MidiChannelControlData();
-		_controlData[i]->volume = _controlData[i]->scaledVolume =
-			(_nativeMT32 ? MT32_DEFAULT_CHANNEL_VOLUME : GM_DEFAULT_CHANNEL_VOLUME);
-	}
-}
-
 int MidiDriver_MT32GM::open() {
 	assert(!_driver);
 
@@ -185,6 +177,18 @@ int MidiDriver_MT32GM::open(MidiDriver *driver, bool nativeMT32) {
 	_isOpen = true;
 
 	return 0;
+}
+
+void MidiDriver_MT32GM::initControlData() {
+	for (int i = 0; i < MIDI_CHANNEL_COUNT; ++i) {
+		_controlData[i] = new MidiChannelControlData();
+		_controlData[i]->volume = _controlData[i]->scaledVolume =
+			(_nativeMT32 ? MT32_DEFAULT_CHANNEL_VOLUME : GM_DEFAULT_CHANNEL_VOLUME);
+		if (_nativeMT32 && i >= 1 && i <= 8) {
+			_controlData[i]->program = MT32_DEFAULT_INSTRUMENTS[i - 1];
+			_controlData[i]->panPosition = MT32_DEFAULT_PANNING[i - 1];
+		}
+	}
 }
 
 void MidiDriver_MT32GM::initMidiDevice() {
@@ -244,7 +248,7 @@ void MidiDriver_MT32GM::initMT32(bool initForGM) {
 		for (i = 0; i < 8; ++i) {
 			setPitchBendRange(i, 2);
 		}
-		setPitchBendRange(9, 2);
+		setPitchBendRange(MIDI_RHYTHM_CHANNEL, 2);
 	}
 }
 

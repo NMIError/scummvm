@@ -424,6 +424,12 @@ void Game::displayChuteAnimation() {
 void Game::displayBarrelAnimation() {
 	Mouse &mouse = Mouse::getReference();
 	Resources &res = Resources::getReference();
+	LureEngine &engine = LureEngine::getReference();
+	Screen &screen = Screen::getReference();
+
+	mouse.setCursorNum(CursorType::CURSOR_DISK);
+	if (!engine.isEGA())
+		screen.paletteFadeOut();
 
 	debugC(ERROR_INTERMEDIATE, kLureDebugAnimations, "Starting barrel animation");
 	Palette palette(BARREL_PALETTE_ID);
@@ -437,8 +443,8 @@ void Game::displayBarrelAnimation() {
 
 	delete anim;
 
-	if (!LureEngine::getReference().isEGA())
-		Screen::getReference().paletteFadeOut();
+	if (!engine.shouldQuit() && !engine.isEGA())
+		screen.paletteFadeOut();
 
 	Sound.killSounds();
 	mouse.cursorOn();

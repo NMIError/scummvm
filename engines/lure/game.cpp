@@ -427,15 +427,21 @@ void Game::displayBarrelAnimation() {
 
 	debugC(ERROR_INTERMEDIATE, kLureDebugAnimations, "Starting barrel animation");
 	Palette palette(BARREL_PALETTE_ID);
-	AnimationSequence *anim = new AnimationSequence(BARREL_ANIM_ID, palette, false);
 	mouse.cursorOff();
 
 	Sound.killSounds();
 	Sound.musicInterface_Play(0x3B, 0, true);
 
+	AnimationSequence *anim = new AnimationSequence(BARREL_ANIM_ID, palette, true);
 	anim->show();
 
 	delete anim;
+
+	if (!LureEngine::getReference().isEGA())
+		Screen::getReference().paletteFadeOut();
+
+	Sound.killSounds();
+	mouse.cursorOn();
 
 	// Disable town NPCs that are no longer needed
 	res.deactivateHotspot(SKORL_ID);
@@ -446,9 +452,6 @@ void Game::displayBarrelAnimation() {
 	res.deactivateHotspot(GOEWIN_ID);
 	res.deactivateHotspot(MONK2_ID);
 	res.deactivateHotspot(WAYNE_ID);
-
-	Sound.killSounds();
-	mouse.cursorOn();
 }
 
 void Game::handleClick() {

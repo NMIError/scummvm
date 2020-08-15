@@ -278,9 +278,10 @@ void Game::execute() {
 				screen.paletteFadeOut();
 
 			Palette palette(SKORL_CATCH_PALETTE_ID);
+			mouse.cursorOff();
+
 			static const AnimSoundSequence catchSound[] = { { 12, 0xFF, 0xFF, 1, false }, { 1, 41, 41, 1, false } };
 			AnimationSequence *anim = new AnimationSequence(SKORL_CATCH_ANIM_ID, palette, true, 5, catchSound);
-			mouse.cursorOff();
 			anim->show();
 			delete anim;
 

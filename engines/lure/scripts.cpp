@@ -211,7 +211,7 @@ void Script::endgameSequence(uint16 v1, uint16 v2, uint16 v3) {
 	AnimAbortType animResult = anim->show();
 
 	Sound.killSounds();
-	if (animResult == AnimAbortType::ABORT_NONE) {
+	if (animResult == ABORT_NONE) {
 		Sound.musicInterface_Play(Sound.isRoland() ? 0 : 0x28, 0, false);
 		events.interruptableDelay(5500);
 	}

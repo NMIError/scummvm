@@ -111,6 +111,10 @@ MidiDriver_MT32GM::MidiDriver_MT32GM(MusicType midiType) :
 		}
 	}
 
+	// Default MT-32 <> GM instrument mappings.
+	_mt32ToGMInstrumentMap = _mt32ToGm;
+	_gmToMT32InstrumentMap = _gmToMt32;
+
 	_maximumActiveNotes = _midiType == MT_MT32 ? MAXIMUM_MT32_ACTIVE_NOTES : MAXIMUM_GM_ACTIVE_NOTES;
 	_activeNotes = new ActiveNote[_maximumActiveNotes];
 	assert(_activeNotes);
@@ -600,7 +604,7 @@ bool MidiDriver_MT32GM::removeActiveNote(uint8 outputChannel, uint8 note, int8 s
 			}
 		}
 	}
-	warning("MidiDriver_MT32GM: Could not find active note %x on channel %i when removing", note, outputChannel);
+	//warning("MidiDriver_MT32GM: Could not find active note %x on channel %i when removing", note, outputChannel);
 	return false;
 }
 
@@ -630,7 +634,7 @@ void MidiDriver_MT32GM::programChange(byte outputChannel, byte patchId, int8 sou
 
 		if (!_nativeMT32 && !_enableGS) {
 			// GM device: map the patch to GM equivalent
-			patchId = _mt32ToGm[patchId];
+			patchId = mapMT32InstrumentToGM(patchId);
 		}
 	} else {
 		// GM/GS MIDI
@@ -647,12 +651,20 @@ void MidiDriver_MT32GM::programChange(byte outputChannel, byte patchId, int8 sou
 			}
 		} else {
 			// GM on an MT-32: map the patch to the MT-32 equivalent
-			patchId = _gmToMt32[patchId];
+			patchId = mapGMInstrumentToMT32(patchId);
 		}
 	}
 
 	// Finally send program change to MIDI device
 	_driver->send(MIDI_COMMAND_PROGRAM_CHANGE | outputChannel | (patchId << 8));
+}
+
+byte MidiDriver_MT32GM::mapMT32InstrumentToGM(byte mt32Instrument) {
+	return _mt32ToGMInstrumentMap[mt32Instrument];
+}
+
+byte MidiDriver_MT32GM::mapGMInstrumentToMT32(byte gmInstrument) {
+	return _gmToMT32InstrumentMap[gmInstrument];
 }
 
 byte MidiDriver_MT32GM::correctInstrumentBank(byte instrumentBank, byte patchId) {

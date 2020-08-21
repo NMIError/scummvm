@@ -244,6 +244,8 @@ protected:
 	virtual bool removeActiveNote(uint8 outputChannel, uint8 note, int8 source);
 	virtual void removeActiveNotes(uint8 outputChannel, bool sustainedNotes);
 	bool isOutputChannelUsed(int8 outputChannel);
+	virtual byte mapMT32InstrumentToGM(byte mt32Instrument);
+	virtual byte mapGMInstrumentToMT32(byte gmInstrument);
 	/**
 	 * Checks if the currently selected GS bank / instrument variation
 	 * on the specified channel is valid for the specified patch.
@@ -299,6 +301,8 @@ protected:
 
 	MidiSource _sources[MAXIMUM_SOURCES];
 
+	const byte *_mt32ToGMInstrumentMap;
+	const byte *_gmToMT32InstrumentMap;
 	uint8 _maximumActiveNotes;
 	ActiveNote *_activeNotes;
 

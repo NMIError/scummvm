@@ -531,14 +531,14 @@ bool SoundManager::fadeOut() {
 void SoundManager::pause() {
 	_paused = true;
 
-	g_system->lockMutex(_soundMutex);
+	_soundMutex.lock();
 
 	MusicListIterator i;
 	for (i = _playingSounds.begin(); i != _playingSounds.end(); ++i) {
 		(**i).pauseMusic();
 	}
 
-	g_system->unlockMutex(_soundMutex);
+	_soundMutex.unlock();
 
 	// Terminate any hanging notes, just in case
 	_driver->stopAllNotes();
@@ -547,14 +547,14 @@ void SoundManager::pause() {
 void SoundManager::resume() {
 	_paused = false;
 
-	g_system->lockMutex(_soundMutex);
+	_soundMutex.lock();
 
 	MusicListIterator i;
 	for (i = _playingSounds.begin(); i != _playingSounds.end(); ++i) {
 		(**i).resumeMusic();
 	}
 
-	g_system->unlockMutex(_soundMutex);
+	_soundMutex.unlock();
 }
 
 /*------------------------------------------------------------------------*/

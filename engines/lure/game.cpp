@@ -406,7 +406,7 @@ void Game::displayChuteAnimation() {
 	delete anim;
 
 	if (result != ABORT_END_INTRO) {
-		anim = new AnimationSequence(CHUTE2_ANIM_ID, palette, true, 4, NULL, 5);
+		anim = new AnimationSequence(CHUTE2_ANIM_ID, palette, true, 5, NULL, 4);
 		result = anim->show();
 		delete anim;
 	}

@@ -74,6 +74,10 @@ namespace Audio {
 #define MILES_MT32_PATCHDATA_PARTIALPARAMETERS_COUNT 4
 #define MILES_MT32_PATCHDATA_TOTAL_SIZE (MILES_MT32_PATCHDATA_COMMONPARAMETER_SIZE + (MILES_MT32_PATCHDATA_PARTIALPARAMETER_SIZE * MILES_MT32_PATCHDATA_PARTIALPARAMETERS_COUNT))
 
+// Some engines using Miles assume a source neutral
+// volume of 256, so use this by default.
+#define MILES_DEFAULT_SOURCE_NEUTRAL_VOLUME 256
+
 struct MilesMT32InstrumentEntry {
 	byte bankId;
 	byte patchId;

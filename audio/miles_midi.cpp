@@ -59,6 +59,8 @@ MidiDriver_Miles_Midi::MidiDriver_Miles_Midi(MusicType midiType, MilesMT32Instru
 	// engines using Miles implement this themselves. Can
 	// be turned on using the property function.
 	_userVolumeScaling = false;
+
+	setSourceNeutralVolume(MILES_DEFAULT_SOURCE_NEUTRAL_VOLUME);
 }
 
 MidiDriver_Miles_Midi::~MidiDriver_Miles_Midi() {

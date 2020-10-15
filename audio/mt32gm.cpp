@@ -381,6 +381,7 @@ uint32 MidiDriver_MT32GM::property(int prop, uint32 param) {
 		_midiDataReversePanning = param > 0;
 		break;
 	default:
+		MidiDriver::property(prop, param);
 		break;
 	}
 	return 0;

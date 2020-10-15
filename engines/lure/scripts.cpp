@@ -219,10 +219,8 @@ void Script::endgameSequence(uint16 v1, uint16 v2, uint16 v3) {
 
 	Sound.killSounds();
 
-	if (engine.shouldQuit()) {
-		engine.quitGame();
+	if (engine.shouldQuit())
 		return;
-	}
 
 	if (!Sound.isRoland())
 		Sound.loadSection(ADLIB_ENDGAME_SOUND_RESOURCE_ID);
@@ -233,10 +231,8 @@ void Script::endgameSequence(uint16 v1, uint16 v2, uint16 v3) {
 	events.interruptableDelay(30500);
 	delete anim;
 
-	if (engine.shouldQuit()) {
-		engine.quitGame();
+	if (engine.shouldQuit())
 		return;
-	}
 
 	anim = new AnimationSequence(ENDGAME_ANIM_ID + 4, p, false);
 	anim->show();
